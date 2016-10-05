@@ -4,14 +4,19 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 
 import pokerEnums.eCardNo;
 import pokerEnums.eHandStrength;
 import pokerEnums.eRank;
 import pokerEnums.eSuit;
 
+import pokerExceptions.DeckExceptions;
+import pokerExceptions.HandExceptions;
+
 public class Hand {
 
+	private static final Comparator<? super Hand> HandRank = null;
 	private ArrayList<Card> CardsInHand = new ArrayList<Card>();
 	private boolean bScored;
 	private HandScore hs;
@@ -56,19 +61,14 @@ public class Hand {
 		// Sort the colleciton (by hand rank)
 		Collections.sort(h.getCardsInHand());
 
-		// TODO - Lab 3 Here's the code to throw the HandException
-		// TODO - Implement HandException
-		/*
-		 * if (h.getCardsInHand().size() != 5) { throw new
-		 * HandException(h,eHandExceptionType.ShortHand); }
-		 */
-
 		ArrayList<Hand> ExplodedHands = new ArrayList<Hand>();
 		ExplodedHands.add(h);
 
-		ExplodedHands = ExplodeHands(ExplodedHands);
-
 		for (Hand hEval : ExplodedHands) {
+			if (h.getCardsInHand().size() != 5) { 
+				throw new HandExceptions(h);
+			}
+			Collections.sort(h.getCardsInHand());
 
 			HandScore hs = new HandScore();
 			try {
@@ -107,13 +107,34 @@ public class Hand {
 			} catch (InvocationTargetException e) {
 				e.printStackTrace();
 			}
+	}
+		
+		if (ExplodedHands.size() != 1) {
+			Hand BestHand = ExplodedHands.get(0);
+			for (int i = 1; i < ExplodedHands.size() - 1; i++) {
+				if (BestHand.getHs().getHandStrength() < ExplodedHands.get(i).getHs().getHandStrength()) {
+					BestHand = ExplodedHands.get(i);
+				}
+				else if (BestHand.getHs().getHiHand() < ExplodedHands.get(i).getHs().getHiHand()) {
+					BestHand = ExplodedHands.get(i);
+				}
+				else if (BestHand.getHs().getLoHand() < ExplodedHands.get(i).getHs().getLoHand()) {
+					BestHand = ExplodedHands.get(i);				
+				}
+				else {
+					for (int j = 0; j < BestHand.getHs().getKickers().size(); j++) {
+						if (BestHand.getHs().getKickers().get(j).geteRank().getiRankNbr() < ExplodedHands.get(i).getHs().getKickers().get(j).geteRank().getiRankNbr()) {
+							BestHand = ExplodedHands.get(i);
+							break;
+						}
+					}
+				}
+			}
+			h = BestHand;
 		}
-
-		// TODO - Lab 3. ExplodedHands has a bunch of hands.
-		// Either 1, 52, 2
 		return h;
 	}
-
+	
 	/**
 	 * 
 	 * @param h
@@ -121,10 +142,28 @@ public class Hand {
 	 * @return
 	 */
 
-	private static ArrayList<Hand> ExplodeHands(ArrayList<Hand> Hands) {
-		// TODO - Lab3 Implement this
-		return null;
+	private static ArrayList<Hand> ExplodeHands(Hand Hands) {
+		
+		ArrayList<Hand> HandPossibilities = new ArrayList<Hand>();
+		HandPossibilities.add(Hands);
+	
+		for(int i =0; i < Hands.getCardsInHand().size(); i++) {
+			if(Hands.getCardsInHand().get(i).geteRank() == eRank.JOKER || Hands.getCardsInHand().get(i).isbWild()== true) {
+				HandPossibilities.add(Hands);
+			}
+		}
+		return HandPossibilities;
 	}
+	
+	public static Hand PickBestHand(ArrayList<Hand> Hands) throws HandExceptions {
+		Collections.sort(Hands, Hand.HandRank);
+		Hand bestHand = Hands.get(0);
+		if(bestHand == Hands.get(1)) {
+			throw new HandExceptions(bestHand);
+		}
+		return bestHand;
+	}
+	
 
 	public static boolean isHandRoyalFlush(Hand h, HandScore hs) {
 
@@ -159,6 +198,21 @@ public class Hand {
 		}
 
 		return isRoyalFlush;
+	}
+	
+	public static boolean isHandFiveOfAKind(Hand h, HandScore hs) {
+		boolean bHandCheck = false;
+		
+		if(h.getCardsInHand().get(eCardNo.FirstCard.getCardNo()).geteRank() == h.getCardsInHand().get(eCardNo.FifthCard.getCardNo()).geteRank()) {
+			bHandCheck = true;
+			hs.setHandStrength(eHandStrength.FiveOfAKind.getHandStrength());
+			hs.setLoHand(0);
+			hs.setHiHand(h.getCardsInHand().get(eCardNo.FirstCard.getCardNo()).geteRank().getiRankNbr());
+			ArrayList<Card> kickers = new ArrayList<Card>();
+			kickers.add(h.getCardsInHand().get(eCardNo.FifthCard.getCardNo()));
+			hs.setKickers(kickers);
+		}
+		return bHandCheck;
 	}
 
 	/**

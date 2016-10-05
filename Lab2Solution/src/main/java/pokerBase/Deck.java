@@ -5,6 +5,7 @@ import java.util.Collections;
 
 import pokerEnums.eRank;
 import pokerEnums.eSuit;
+import pokerExceptions.DeckExceptions;
 
 public class Deck {
 
@@ -14,31 +15,49 @@ public class Deck {
 		int iCardNbr = 1;
 		for (eSuit eSuit : eSuit.values()) {
 			for (eRank eRank : eRank.values()) {
-				//TODO Lab3 - Fix this
-				//if (eSuit != eSuit.JOKER) <-- you'll thank me :)
-				//{
+				if((eRank != eRank.JOKER) && (eSuit != eSuit.JOKER)) {
 					deckCards.add(new Card(eSuit, eRank, iCardNbr++));
-				//}
+				}
 			}
 			 
 		}
 		Collections.shuffle(deckCards);
 	}
 	
+	
 	public Deck(int NbrOfJokers) {
-
-		//TODO Lab3 - Implement joker constructor
+		this(); 
+		
+		for(int i = 0; i < NbrOfJokers; i++) {
+			deckCards.add(new Card(eSuit.JOKER, eRank.JOKER, 99));
+		}
+		Collections.shuffle(deckCards);
 	}
 	
 	
 	public Deck(int NbrOfJokers, ArrayList<Card> Wilds) {
-
-		//TODO Lab3 - Implement joker and wild constructor
-	 
-		
+		this(NbrOfJokers);	
+		for(Card dCard: deckCards) {
+			for(Card WildCard : Wilds) {
+				if((dCard.geteSuit() == WildCard.geteSuit()) && (dCard.geteRank() == WildCard.geteRank()))
+				{
+					dCard.setbWild(true);
+				}
+			}
+		}
+		Collections.shuffle(deckCards);
 	}
-	public Card Draw(){
-		//TODO Lab 3 - Implement exception handling for overdraw
+	
+	
+	public Card Draw() throws DeckExceptions {
+		if(deckCards.size()==0) {
+			
+			throw new DeckExceptions(this);
+		}
 		return deckCards.remove(0);
+	}
+	
+	public int getTotalCards() {
+		return deckCards.size();
 	}
 }
